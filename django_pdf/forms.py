@@ -2,12 +2,12 @@ from django import forms
 from django.db import models
 from reportlab.pdfgen import canvas
 
-from django_pdf.models import HTMLTemplate, SUPPORTED_FONTS
+from django_pdf.models import SUPPORTED_FONTS, HTMLTemplate
 
 
 class TemplateType(models.TextChoices):
     HTML = "html", "HTML Template"
-    PDF = 'pdf', "PDF Template"
+    PDF = "pdf", "PDF Template"
 
 
 class TemplateTypeForm(forms.Form):

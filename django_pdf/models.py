@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.shortcuts import render
-from django.template import Engine, Context
+from django.template import Context, Engine
 from django.template.loader import get_template, render_to_string
 from django.urls import reverse
 from typeguard import check_type
@@ -29,17 +29,19 @@ HTMLContextSchema = Dict[str, HTMLContextSchemaValue]
 PDFContextSchema = Dict[str, PDFContextSchemaValue]
 
 SUPPORTED_FONTS = {
-    'Arial, Helvetica, sans-serif': 'Arial',
-    'Courier New, Courier, monospace': 'Courier',
-    'Helvetica, Arial, sans-serif': 'Helvetica',
-    'Symbol': 'Symbol',
-    'Times New Roman, Times, serif': 'Times-Roman',
-    'ZapfDingbats': 'ZapfDingbats',
+    "Arial, Helvetica, sans-serif": "Arial",
+    "Courier New, Courier, monospace": "Courier",
+    "Helvetica, Arial, sans-serif": "Helvetica",
+    "Symbol": "Symbol",
+    "Times New Roman, Times, serif": "Times-Roman",
+    "ZapfDingbats": "ZapfDingbats",
 }
 
 
 class BaseTemplate(models.Model):
-    PDF_TEMPLATE_DIR = getattr(settings, "PDF_TEMPLATE_DIR", "django_pdf_files")
+    PDF_TEMPLATE_DIR = getattr(
+        settings, "PDF_TEMPLATE_DIR", "django_pdf_files"
+    )
     context_schema = models.JSONField()
     example_context = models.JSONField()
     name = models.CharField(unique=True, max_length=255)
@@ -89,9 +91,7 @@ class HTMLTemplate(BaseTemplate):
     @property
     def url(self) -> None | str:
         if self.pk:
-            return reverse(
-                "django_pdf:update-html-template", args=(self.pk,)
-            )
+            return reverse("django_pdf:update-html-template", args=(self.pk,))
         return None
 
     class Meta:
@@ -99,7 +99,6 @@ class HTMLTemplate(BaseTemplate):
 
 
 class PDFTemplate(BaseTemplate):
-
     template_file = models.FileField(
         upload_to=BaseTemplate.PDF_TEMPLATE_DIR,
         validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
@@ -113,9 +112,7 @@ class PDFTemplate(BaseTemplate):
     @property
     def url(self) -> None | str:
         if self.pk:
-            return reverse(
-                "django_pdf:update-pdf-template", args=(self.pk,)
-            )
+            return reverse("django_pdf:update-pdf-template", args=(self.pk,))
         return None
 
     class Meta:

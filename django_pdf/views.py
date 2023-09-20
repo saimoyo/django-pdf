@@ -3,8 +3,11 @@ from datetime import datetime
 from typing import Any
 
 from django.conf import settings
-from django.contrib.auth.mixins import LoginRequiredMixin, \
-    PermissionRequiredMixin
+from django.contrib.auth.mixins import (
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+)
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
 from django.db import models
 from django.http import HttpRequest, HttpResponse
@@ -15,9 +18,8 @@ from django.utils.html import escape
 from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
-from django_pdf.forms import TemplateTypeForm, TemplateType, FontFamilyForm
+from django_pdf.forms import FontFamilyForm, TemplateType, TemplateTypeForm
 from django_pdf.models import HTMLTemplate, PDFTemplate
-from django.core.exceptions import ObjectDoesNotExist
 
 
 class _TemplatesPermissionMixin(LoginRequiredMixin, PermissionRequiredMixin):
@@ -50,7 +52,9 @@ class HTMLTemplateView(_CreateOrUpdateView):
     def get_context_data(self, **kwargs: Any) -> dict:
         pdf_url = None
         if html_template := self.get_object():
-            template_file_content = html_template.template_file.file.read().decode()
+            template_file_content = (
+                html_template.template_file.file.read().decode()
+            )
             html_template.template_file.file.seek(0)
             pdf_buffer = html_template.generate(html_template.example_context)
             current_hour = datetime.now().hour
@@ -69,7 +73,7 @@ class HTMLTemplateView(_CreateOrUpdateView):
 
         return super().get_context_data(**kwargs) | {
             "template_file_content": template_file_content,
-            "pdf_url": pdf_url
+            "pdf_url": pdf_url,
         }
 
     def get_success_url(self):
@@ -108,5 +112,5 @@ class TemplateHTMX(_TemplatesPermissionMixin, View):
         return render(
             request,
             template_name="django_pdf/dashboard/htmx/templates_list.html",
-            context={"templates": templates}
+            context={"templates": templates},
         )
