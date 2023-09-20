@@ -1,0 +1,38 @@
+<!--
+    This is a Django template, so you can use tags like `static` and `url`.
+    Avoid using JS. Your context schema should be simple strings.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            /*
+                This is where you set the page size and margins.
+                See https://developer.mozilla.org/en-US/docs/Web/CSS/@page
+            */
+            size: A4;
+            margin: 10mm;
+        }
+    </style>
+</head>
+<body>
+    <!--Add your content here-->
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    <p>{{ other }}</p>
+
+
+    <h2 style="page-break-before: always;">Page 1: Introduction</h2>
+    <p>This is page 1 of the test PDF. It contains some introductory content.</p>
+
+    <h2 style="page-break-before: always;">Page 2: Main Content</h2>
+    <p>This is page 2 of the test PDF. It contains the main content of the document.</p>
+    <p>Here's more content on page 2.</p>
+
+    <h2 style="page-break-before: always;">Page 3: Conclusion</h2>
+    <p>This is page 3 of the test PDF. It contains the conclusion of the document.</p>
+    <p>Thank you for reading!</p>
+</body>
+</html>

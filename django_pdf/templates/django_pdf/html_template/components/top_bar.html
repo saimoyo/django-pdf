@@ -1,0 +1,18 @@
+<div class="d-flex justify-content-between mb-2">
+    <div class="input-group mb-4 h-100">
+        <span class="input-group-text" id="basic-addon3">Template Name</span>
+        <input class="form-control" type="text" name="name" x-model="name" value="{{ form.name.value }}" required/>
+        <div class="invalid-feedback d-block">
+            {{ form.name.errors }}
+        </div>
+    </div>
+
+    <input class="d-none" type="text" name="context_schema" id="context_schema"/>
+    <input class="d-none" type="text" name="example_context" id="example_context"/>
+    <input class="d-none" type="file" name="template_file" id="template_file"/>
+    <button
+        class="btn btn-primary save-button ms-3 text-nowrap h-100"
+        type="button"
+        @click="saveData()"
+    >Save Template</button>
+</div>

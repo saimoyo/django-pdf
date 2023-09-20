@@ -1,0 +1,14 @@
+{% if form.example_context.value and form.example_context.value != "null" %}
+    {{ form.example_context.value|json_script:"example_context_script" }}
+    <script>
+        const exampleContextScriptElement = document.getElementById('example_context_script')
+        let exampleContext = JSON.parse(exampleContextScriptElement.textContent)
+        if (typeof exampleContext == "string"){
+            exampleContext = JSON.parse(exampleContext)
+        }
+    </script>
+{% else %}
+    <script>
+        const exampleContext = {}
+    </script>
+{% endif %}

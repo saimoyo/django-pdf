@@ -1,0 +1,14 @@
+{% if form.context_schema.value and form.context_schema.value != "null" %}
+    {{ form.context_schema.value|json_script:"context_schema_script" }}
+    <script>
+        const contextSchemaScriptElement = document.getElementById('context_schema_script')
+        let contextSchema = JSON.parse(contextSchemaScriptElement.textContent)
+        if (typeof contextSchema == "string"){
+            contextSchema = JSON.parse(contextSchema)
+        }
+    </script>
+{% else %}
+    <script>
+        const contextSchema = {}
+    </script>
+{% endif %}

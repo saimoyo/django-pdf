@@ -1,0 +1,55 @@
+{% include "django_pdf/js/contextSchema.js.html" %}
+{% include "django_pdf/js/exampleContext.js.html" %}
+<script>
+
+    function baseTemplateCtx (){
+        return {
+            contextSchema,
+            exampleContext,
+            name: "{{ form.name.value|default:"" }}",
+            setInputValue(id, valueObj){
+                const element = document.getElementById(id);
+                element.setAttribute(
+                    "value",
+                    JSON.stringify(valueObj),
+                )
+            },
+            setupLocalPDFViewer(previewElement, fileElement){
+                const pdfUrl = URL.createObjectURL(fileElement.files[0])
+                this.setupPdfViewer(previewElement, pdfUrl)
+            },
+            setupPdfViewer(previewElement, pdfUrl){
+                console.log(previewElement)
+                console.log(pdfUrl)
+                // Use PDF.js to display the PDF
+                if (previewElement && pdfUrl) {
+                    previewElement.innerHTML = '';
+                    pdfjsLib.getDocument(pdfUrl).promise.then(function (pdfDoc) {
+                        // Loop through each page and render it
+                        for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                            pdfDoc.getPage(pageNum).then(function (page) {
+                                // Create a canvas element for each page
+                                const canvas = document.createElement('canvas');
+                                previewElement.appendChild(canvas);
+
+                                // Set the canvas dimensions
+                                const viewport = page.getViewport({ scale: 1.5 });
+                                canvas.height = viewport.height;
+                                canvas.width = viewport.width;
+
+                                // Render the page content on the canvas
+                                const context = canvas.getContext('2d');
+                                const renderContext = {
+                                    canvasContext: context,
+                                    viewport: viewport,
+                                };
+                                page.render(renderContext);
+                            });
+                        }
+                    });
+
+                }
+            }
+        }
+    }
+</script>

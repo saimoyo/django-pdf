@@ -1,0 +1,78 @@
+{% include "django_pdf/html_template/js/templateFileContent.js.html" %}
+{% include "django_pdf/js/template.js.html" %}
+<script>
+    const initialContent = "{{ initial_content|escapejs }}"
+    {% verbatim %}
+        const FIND_VARIABLES_REGEX = /{{(.*?)}}/g;
+    {% endverbatim %}
+
+    function htmlTemplateCtx (){
+        let editor = null
+        function setUpEditor(){
+            editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: templateFileContent,
+                language: 'html',
+                automaticLayout: true
+            });
+        }
+        require(['vs/editor/editor.main'],  setUpEditor);
+        return {
+            ...baseTemplateCtx(),
+            addContextVariable (variableName){
+                if (!this.contextSchema.hasOwnProperty(variableName)){
+                    this.contextSchema[variableName] = {
+                        required: false,
+                    }
+                    this.exampleContext[variableName] = "Hello World"
+                }
+            },
+            findVariables(){
+                const currentContent = editor.getValue()
+                let variables = [];
+                let variable
+                while ((variable = FIND_VARIABLES_REGEX.exec(currentContent)) !== null) {
+                  variables.push(variable[1].trim());
+                  this.addContextVariable(variable[1].trim())
+                }
+                for (variable of Object.keys(this.contextSchema)){
+                    if (!variables.includes(variable)){
+                        this.removeContextVariable(variable)
+                    }
+                }
+
+            },
+            removeContextVariable (variableName) {
+                if (this.contextSchema.hasOwnProperty(variableName)) {
+                    delete this.contextSchema[variableName]
+                }
+                if (this.exampleContext.hasOwnProperty(variableName)) {
+                    delete this.exampleContext[variableName]
+                }
+            },
+            setTemplateFile(){
+                const templateFileElement = document.getElementById('template_file');
+                const fileContent = editor.getValue();
+                const fileBlob = new Blob([fileContent], { type: 'text/plain' });
+                const fileName = this.name.replace(/[^a-zA-Z0-9]/g, "")
+                const file = new File([fileBlob], `${fileName}.html`);
+                const dataTransfer = new DataTransfer()
+                dataTransfer.items.add(file)
+                templateFileElement.files = dataTransfer.files
+            },
+            saveData() {
+                this.findVariables()
+                const form = document.getElementById('templateForm');
+                if (form.reportValidity()) {
+                    this.setInputValue('context_schema', this.contextSchema)
+                    this.setInputValue('example_context', this.exampleContext)
+                    this.setTemplateFile()
+                    form.submit()
+                }
+            }
+        }
+    }
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data("htmlTemplate", htmlTemplateCtx)
+    });
+</script>

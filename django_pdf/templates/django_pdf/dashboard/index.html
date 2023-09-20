@@ -1,0 +1,50 @@
+{% extends "django_pdf/base.html" %}
+{% load static %}
+{% block header %}
+    <title>Manage PDF Templates</title>
+    <style>
+        .table-actions {
+            width: 100px;
+        }
+
+        td {
+            vertical-align: middle;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="container mt-2">
+    <h1 class="text-center">Templates</h1>
+    <div class="w-100 d-flex justify-content-between mb-4">
+        <span>
+            <div class="input-group">
+                <span class="input-group-text">Template Type</span>
+                <select
+                    class="form-select"
+                    name="{{ type_form.type.name }}"
+                    hx-trigger="load, change"
+                    hx-get="{% url "django_pdf:pdf-templates" %}"
+                    hx-target="#template-list"
+                >
+                    {% for choice in type_form.type.field.choices %}
+                        <option
+                            value="{{ choice.0 }}"
+                        >{{ choice.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </span>
+        <div class="dropdown-menu-end">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Create Template
+            </button>
+            <ul class="dropdown-menu">
+                <a class="dropdown-item" href="{% url 'django_pdf:create-html-template' %}">Create HTML Template</a>
+                <a class="dropdown-item" href="{% url 'django_pdf:create-pdf-template' %}">Create PDF Template</a>
+            </ul>
+        </div>
+    </div>
+    <div id="template-list" class="card"></div>
+</div>
+{% endblock %}
+</html>

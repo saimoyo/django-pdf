@@ -1,0 +1,33 @@
+{% extends "django_pdf/base.html" %}
+{% load static %}
+{% block header %}
+    <title>Edit HTML template</title>
+    <link rel="stylesheet"
+          href="{% static "django_pdf/monaco-editor/min/vs/editor/editor.main.css" %}">
+    <script src="{% static "django_pdf/monaco-editor/min/vs/loader.js" %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.10.111/build/pdf.min.js"></script>
+    <script>
+        require.config({paths: {'vs': '{% static "django_pdf/monaco-editor/min/vs" %}'}});
+    </script>
+{% endblock %}
+{% block content %}
+    <div class="container" x-data="htmlTemplate">
+        <form
+            id="templateForm" method="post"
+            action="{{ request.get_full_path }}"
+            enctype="multipart/form-data"
+            class="row"
+        >
+            {% csrf_token %}
+            <div class="col-md-4">
+                {% include "django_pdf/html_template/components/context_schema.html" %}
+            </div>
+
+            <div class="col-md-8">
+                {% include "django_pdf/html_template/components/top_bar.html" %}
+                {% include "django_pdf/html_template/components/editor.html" %}
+            </div>
+        </form>
+        {% include "django_pdf/html_template/js/htmlTemplate.js.html" %}
+    </div>
+{% endblock %}

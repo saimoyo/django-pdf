@@ -1,0 +1,39 @@
+<div class="mb-2">
+    <div class="mb-1 h-100 input-group w-100">
+        <span class="input-group-text" id="basic-addon3">Template File</span>
+        <label for="template_file" class="border bg-white flex-fill d-flex align-items-center ps-2">
+            <span  x-show="!templateFilePath">Select the base template PDF file</span>
+            <span  x-show="templateFilePath" x-text="templateFileName">x</span>
+        </label>
+        <input
+            class="d-none"
+            type="file"
+            name="template_file"
+            x-model="templateFilePath"
+            id="template_file"
+            title="Select the base template pdf"
+            accept="application/pdf"
+            @change="$dispatch('foo');console.log('dispatch')"
+        />
+        <div class="invalid-feedback d-block">
+            {{ form.template_file.errors }}
+        </div>
+    </div>
+    <div class="d-flex justify-content-between">
+        <div class="input-group mb-1 h-100">
+            <span class="input-group-text" id="basic-addon3">Name</span>
+            <input class="form-control" type="text" name="name" x-model="name" value="{{ form.name.value }}" required/>
+            <div class="invalid-feedback d-block">
+                {{ form.name.errors }}
+            </div>
+        </div>
+
+        <input class="d-none" type="text" name="context_schema" id="context_schema"/>
+        <input class="d-none" type="text" name="example_context" id="example_context"/>
+        <button
+            class="btn btn-primary save-button ms-3 text-nowrap h-100"
+            type="button"
+            @click="saveData()"
+        >Save Template</button>
+    </div>
+</div>

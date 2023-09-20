@@ -1,0 +1,42 @@
+{% load static %}
+<div>
+    <div class="d-flex justify-content-between">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="editor-tab"
+                   data-bs-toggle="tab" data-bs-target="#editor"
+                   role="tab" aria-controls="editor"
+                   aria-selected="true">Editor</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="preview-tab"
+                   data-bs-toggle="tab" data-bs-target="#preview"
+                   role="tab" aria-controls="preview"
+                   aria-selected="false">Preview</a>
+            </li>
+        </ul>
+    </div>
+    <div class="tab-content">
+        <!-- Editor Tab Content -->
+        <div class="tab-pane fade show active" id="editor"
+             role="tabpanel" aria-labelledby="editor-tab">
+            <div class="w-100 position-relative overflow-scroll" id="editor" style="height: 74vh;">
+                <div id="preview-content" class="overflow-scroll w-100 bg-white position-absolute"
+                     style="height: 74vh; z-index: -1"
+                     @foo.window="setupLocalPDFViewer($el, $event.target)"
+                >
+                </div>
+                <div id="annotate-container" class="overflow-scroll text-white position-absolute" style="height: 74vh; z-index: 1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Tab Content -->
+        <div class="tab-pane fade w-100" id="preview" role="tabpanel"
+             aria-labelledby="preview-tab">
+            <div id="preview-content" class="overflow-scroll w-100"
+                 style="height: 74vh;"  x-init="setupPdfViewer($el, '{{ preview_pdf_url }}')">>
+            </div>
+        </div>
+    </div>
+</div>
