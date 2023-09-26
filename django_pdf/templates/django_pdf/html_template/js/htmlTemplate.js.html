@@ -1,7 +1,6 @@
 {% include "django_pdf/html_template/js/templateFileContent.js.html" %}
 {% include "django_pdf/js/template.js.html" %}
 <script>
-    const initialContent = "{{ initial_content|escapejs }}"
     {% verbatim %}
         const FIND_VARIABLES_REGEX = /{{(.*?)}}/g;
     {% endverbatim %}
@@ -49,7 +48,7 @@
                     delete this.exampleContext[variableName]
                 }
             },
-            setTemplateFile(){
+            setHTMLTemplateFile(){
                 const templateFileElement = document.getElementById('template_file');
                 const fileContent = editor.getValue();
                 const fileBlob = new Blob([fileContent], { type: 'text/plain' });
@@ -59,13 +58,16 @@
                 dataTransfer.items.add(file)
                 templateFileElement.files = dataTransfer.files
             },
+            getSetHTMLTemplateFileFunc(){
+
+            },
             saveData() {
                 this.findVariables()
                 const form = document.getElementById('templateForm');
                 if (form.reportValidity()) {
                     this.setInputValue('context_schema', this.contextSchema)
                     this.setInputValue('example_context', this.exampleContext)
-                    this.setTemplateFile()
+                    this.setTemplateFile('text/plain')
                     form.submit()
                 }
             }

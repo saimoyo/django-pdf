@@ -6,6 +6,10 @@
         return {
             contextSchema,
             exampleContext,
+            pdfFileDetails: {
+                totalWidthPX: 0,
+                totalHeightPX: 0,
+            },
             name: "{{ form.name.value|default:"" }}",
             setInputValue(id, valueObj){
                 const element = document.getElementById(id);
@@ -18,38 +22,50 @@
                 const pdfUrl = URL.createObjectURL(fileElement.files[0])
                 this.setupPdfViewer(previewElement, pdfUrl)
             },
-            setupPdfViewer(previewElement, pdfUrl){
-                console.log(previewElement)
-                console.log(pdfUrl)
+            setupPdfViewer(previewElement, pdfUrl, onCompleteFunc=null){
                 // Use PDF.js to display the PDF
                 if (previewElement && pdfUrl) {
                     previewElement.innerHTML = '';
+                    const pdfFileDetails = this.pdfFileDetails
                     pdfjsLib.getDocument(pdfUrl).promise.then(function (pdfDoc) {
-                        // Loop through each page and render it
+                        // Now, you have the PDF as a File object
+                        pdfDoc.getJSActions().then(x=>console.log(x))
                         for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                             pdfDoc.getPage(pageNum).then(function (page) {
                                 // Create a canvas element for each page
+
                                 const canvas = document.createElement('canvas');
                                 previewElement.appendChild(canvas);
 
-                                // Set the canvas dimensions
-                                const viewport = page.getViewport({ scale: 1.5 });
-                                canvas.height = viewport.height;
-                                canvas.width = viewport.width;
+                                // Set the canvas dimensions to fit 100% width while maintaining aspect ratio
+                                const viewport = page.getViewport({ scale: 1.0 });
+                                const aspectRatio = viewport.width / viewport.height;
+                                const maxWidth = previewElement.parentElement.parentElement.clientWidth;
+                                const maxHeight = Math.round(maxWidth / aspectRatio);
+                                pdfFileDetails.totalWidthPX = Math.max(maxWidth, pdfFileDetails.totalWidthPX)
+                                pdfFileDetails.totalHeightPX = Math.max(maxHeight, pdfFileDetails.totalHeightPX)
+                                canvas.width = maxWidth;
+                                canvas.height = maxHeight;
+                                canvas.style.marginBottom = '10px';
 
-                                // Render the page content on the canvas
+                                // Calculate the scale factor
+                                const scale = maxWidth / viewport.width;
+
+                                // Render the page content on the canvas with the calculated scale
                                 const context = canvas.getContext('2d');
                                 const renderContext = {
                                     canvasContext: context,
-                                    viewport: viewport,
+                                    viewport: page.getViewport({ scale: scale }),
                                 };
                                 page.render(renderContext);
                             });
                         }
-                    });
-
+                        if (onCompleteFunc){
+                            onCompleteFunc(pdfDoc, pdfUrl)
+                        }
+                    })
                 }
-            }
+            },
         }
     }
 </script>

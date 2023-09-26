@@ -16,17 +16,19 @@
     </ul>
     <div class="tab-content">
         <!-- Editor Tab Content -->
-        <div class="tab-pane fade show active" id="editor"
+        <div class="tab-pane fade show active w-100" id="editor"
              role="tabpanel" aria-labelledby="editor-tab">
             <div id="monaco-editor"
                  style="height: 74vh;"></div>
         </div>
 
         <!-- Preview Tab Content -->
-        <div class="tab-pane fade w-100" id="preview" role="tabpanel"
+        <div class="tab-pane fade" id="preview" role="tabpanel"
              aria-labelledby="preview-tab">
-            <div id="preview-content" class="overflow-scroll w-100"
-                 style="height: 74vh;" x-init="setupPdfViewer($el, '{{ preview_pdf_url }}')">
+            <div id="preview-content" class="overflow-y-scroll w-100 bg-white"
+                 style="height: 74vh;"
+                 {% if preview_pdf_url %}x-init="setupPdfViewer($el, '{{ preview_pdf_url }}')"{% endif %}
+            >
             </div>
         </div>
     </div>

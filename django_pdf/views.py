@@ -19,7 +19,7 @@ from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
 from django_pdf.forms import FontFamilyForm, TemplateType, TemplateTypeForm
-from django_pdf.models import HTMLTemplate, PDFTemplate
+from django_pdf.models import BaseTemplate, HTMLTemplate, PDFTemplate
 
 
 class _TemplatesPermissionMixin(LoginRequiredMixin, PermissionRequiredMixin):
@@ -44,24 +44,32 @@ class _CreateOrUpdateView(_TemplatesPermissionMixin, UpdateView):
             return None
 
 
-class HTMLTemplateView(_CreateOrUpdateView):
+class _BaseTemplateView(_CreateOrUpdateView):
+    def generate_pdf(self, template: BaseTemplate) -> str:
+        pdf_buffer = template.generate(template.example_context)
+        current_hour = datetime.now().hour
+        file_name = f"{template.PDF_TEMPLATE_DIR}/temp/{template.name}_{current_hour}.pdf"
+        default_storage.delete(file_name)
+        default_storage.save(file_name, pdf_buffer)
+        return default_storage.url(file_name)
+
+    def get_success_url(self):
+        return self.object.url
+
+
+class HTMLTemplateView(_BaseTemplateView):
     model = HTMLTemplate
     fields = "__all__"
     template_name = "django_pdf/html_template/index.html"
 
     def get_context_data(self, **kwargs: Any) -> dict:
-        pdf_url = None
+        preview_pdf_url = None
         if html_template := self.get_object():
             template_file_content = (
                 html_template.template_file.file.read().decode()
             )
             html_template.template_file.file.seek(0)
-            pdf_buffer = html_template.generate(html_template.example_context)
-            current_hour = datetime.now().hour
-            file_name = f"{HTMLTemplate.PDF_TEMPLATE_DIR}/temp/{html_template.name}_{current_hour}.pdf"
-            default_storage.delete(file_name)
-            default_storage.save(file_name, pdf_buffer)
-            pdf_url = default_storage.url(file_name)
+            preview_pdf_url = self.generate_pdf(html_template)
 
         elif template_file := self.request.FILES.get("template_file"):
             template_file_content = template_file.read().decode()
@@ -73,31 +81,27 @@ class HTMLTemplateView(_CreateOrUpdateView):
 
         return super().get_context_data(**kwargs) | {
             "template_file_content": template_file_content,
-            "pdf_url": pdf_url,
+            "preview_pdf_url": preview_pdf_url,
         }
 
-    def get_success_url(self):
-        return self.object.url
 
-
-class PDFTemplateView(_CreateOrUpdateView):
+class PDFTemplateView(_BaseTemplateView):
     model = PDFTemplate
     fields = "__all__"
     template_name = "django_pdf/pdf_template/index.html"
 
     def get_context_data(self, **kwargs: Any) -> dict:
-        pdf_url = None
+        template_file_url = None
+        preview_pdf_url = None
         if pdf_template := self.get_object():
-            pdf_url = pdf_template.template_file.url
+            template_file_url = pdf_template.template_file.url
+            preview_pdf_url = self.generate_pdf(pdf_template)
 
         return super().get_context_data(**kwargs) | {
             "font_form": FontFamilyForm(),
-            "pdf_url": pdf_url,
+            "template_file_url": template_file_url,
+            "preview_pdf_url": preview_pdf_url,
         }
-
-    def get_success_url(self):
-        self.form_invalid
-        return self.object.url
 
 
 class TemplateHTMX(_TemplatesPermissionMixin, View):
