@@ -114,8 +114,8 @@ class PDFTemplate(BaseTemplate):
     ) -> BytesIO:
         packet = BytesIO()
         c = canvas.Canvas(packet, pagesize=(page_width, page_height))
-        x_point = variable_schema["x_px"] * page_width
-        y_point = (1 - variable_schema["y_px"] % 1) * page_height
+        x_point = variable_schema["xPercentage"] * page_width
+        y_point = (1 - variable_schema["yPercentage"] % 1) * page_height
         font_family = SUPPORTED_FONTS.get(
             variable_schema["font_family"], "Helvetica"
         )
@@ -155,12 +155,20 @@ class PDFTemplate(BaseTemplate):
         for variable, value in context.items():
             if not (variable_schema := self.context_schema[variable]):
                 continue
-            page_index = int(variable_schema["y_px"])
+            page_index = int(variable_schema["yPercentage"])
             packet = self._generate_canvas(
                 page_width, page_height, variable_schema, value
             )
             packets.setdefault(page_index, []).append(packet)
         return packets
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        try:
+            self.template_file.file.seek(0)
+            PdfReader(self.template_file.file)
+        except:  # TODO: Make the exception more specific
+            raise ValidationError("Invalid PDF")
+        super().save(*args, **kwargs)
 
 
     @property

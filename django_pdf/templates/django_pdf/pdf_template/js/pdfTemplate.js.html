@@ -25,10 +25,10 @@
                         required: false,
                         font_family: "Arial, Helvetica, sans-serif",
                         font_size_px: 16,
-                        x_pos: 0,
-                        y_pos: 0,
-                        x_px: 0,
-                        y_px: 0,
+                        xPosition: 0,
+                        yPosition: 0,
+                        xPercentage: 0,
+                        yPercentage: 0,
                         show_example: false,
                     }
                     this.exampleContext[variableName] = "Hello World"
@@ -39,8 +39,8 @@
                 return {
                     'font-family': variableSchema.font_family,
                     'font-size': (variableSchema.font_size_px + 'px'),
-                    'left': `${variableSchema.x_pos}px`,
-                    'top': `${variableSchema.y_pos}px`,
+                    'left': `${variableSchema.xPosition}px`,
+                    'top': `${variableSchema.yPosition}px`,
                     'width': 'fit-content',
                 }
             },
@@ -69,46 +69,48 @@
                     this.setInputValue('example_context', this.exampleContext)
                     form.submit()
                 }
+
             },
             setOnMove(element, variableName){
                 interact(element)
                     .draggable({
                         onmove: (event) => {
-                            const schema = this.contextSchema[variableName]
+                            const contextData = this.contextSchema[variableName]
                             const element = document.getElementById(variableName)
-                            const x_pos = schema.x_pos + event.dx;
-                            const y_pos = schema.y_pos + event.dy;
-                            schema.x_px = (
-                                (x_pos)
+                            const dragAdjustedX = contextData.xPosition + event.dx;
+                            const dragAdjustedY = contextData.yPosition + event.dy;
+                            contextData.xPercentage = (
+                                (dragAdjustedX)
                                 /this.pdfFileDetails.totalWidthPX
                             )
-                            const abs_y_pos = y_pos+element.clientHeight
-                            const margin = Math.floor((abs_y_pos/this.pdfFileDetails.totalHeightPX)) * 20
-                            schema.y_px = (
-                                (abs_y_pos-margin)
+                            const bottomYPosition = dragAdjustedY+element.clientHeight
+                            const margin = Math.floor((bottomYPosition/this.pdfFileDetails.totalHeightPX)) * 20
+                            contextData.yPercentage = (
+                                (bottomYPosition-margin)
                                 /this.pdfFileDetails.totalHeightPX
                             )
-                            schema.x_pos = x_pos
-                            schema.y_pos = y_pos
-                            console.log(schema)
+                            contextData.xPosition = dragAdjustedX
+                            contextData.yPosition = dragAdjustedY
                         },
                     })
             },
             getSetTemplateFileFunc(){
                 const onCompleteFuncCtx = this
                 function setTemplateFile(pdfDoc, pdfUrl){
-                    const blob = new Blob([pdfDoc.data], { type: 'application/pdf' });
-                    const fileName = onCompleteFuncCtx.getFilenameFromUrl(pdfUrl)
-                    const file = new File(
-                        [blob],
-                        fileName,
-                        { type: 'application/pdf', lastModified: Date.now() }
-                    );
-                    onCompleteFuncCtx.templateFileName = fileName
-                    const templateFileElement = document.getElementById("template_file")
-                    const dataTransfer = new DataTransfer()
-                    dataTransfer.items.add(file)
-                    templateFileElement.files = dataTransfer.files
+                    pdfDoc.getData().then(function(arrayBuffer) {
+                        const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+                        const fileName = onCompleteFuncCtx.getFilenameFromUrl(pdfUrl)
+                        const file = new File(
+                            [blob],
+                            fileName,
+                            { type: 'application/pdf', lastModified: Date.now() }
+                        );
+                        onCompleteFuncCtx.templateFileName = fileName
+                        const templateFileElement = document.getElementById("template_file")
+                        const dataTransfer = new DataTransfer()
+                        dataTransfer.items.add(file)
+                        templateFileElement.files = dataTransfer.files
+                    });
                 }
                 return setTemplateFile
             },
