@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from typing import Any
 
@@ -9,12 +8,9 @@ from django.contrib.auth.mixins import (
 )
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
-from django.db import models
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.template.loader import get_template
-from django.urls import reverse
-from django.utils.html import escape
 from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
