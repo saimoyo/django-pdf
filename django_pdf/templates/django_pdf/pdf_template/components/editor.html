@@ -20,13 +20,23 @@
         <!-- Editor Tab Content -->
         <div class="tab-pane fade show active" id="editor"
              role="tabpanel" aria-labelledby="editor-tab">
-            <div class="w-100 position-relative overflow-scroll" id="editor" style="height: 74vh;">
-                <div id="preview-content" class="overflow-scroll w-100 bg-white position-absolute"
-                     style="height: 74vh; z-index: -1"
-                     @foo.window="setupLocalPDFViewer($el, $event.target)"
+            <div class="w-100 overflow-scroll position-relative" id="editor" style="height: 74vh;">
+                <div id="preview-content" class="overflow-visible w-100 bg-white position-absolute"
+                     style="height: 74vh; z-index: 0"
+                     @filechanged.window="setupLocalPDFViewer($el, $event.target)"
+                     {% if template_file_url %}x-init="setupPdfViewer($el, '{{template_file_url}}', getSetTemplateFileFunc())"{% endif %}
                 >
                 </div>
-                <div id="annotate-container" class="overflow-scroll text-white position-absolute" style="height: 74vh; z-index: 1">
+                <div id="annotate-container" class="w-100 overflow-visible position-relative" style="height: 74vh; z-index: 2">
+                    <template x-for="variable in Object.keys(contextSchema)">
+                        <div
+                            :id="variable"
+                            class="border bg-success opacity-50 px-2 text-white position-absolute"
+                            :style="getAnnotateVariableStyle(variable)"
+                            x-text="getAnnotateVariableExample(variable)"
+                            x-init="setOnMove($el, variable)"
+                           ></div>
+                    </template>
                 </div>
             </div>
         </div>
@@ -35,7 +45,7 @@
         <div class="tab-pane fade w-100" id="preview" role="tabpanel"
              aria-labelledby="preview-tab">
             <div id="preview-content" class="overflow-scroll w-100"
-                 style="height: 74vh;"  x-init="setupPdfViewer($el, '{{ preview_pdf_url }}')">>
+                 style="height: 74vh;"  {% if preview_pdf_url %}x-init="setupPdfViewer($el, '{{ preview_pdf_url }}')"{% endif %}>
             </div>
         </div>
     </div>

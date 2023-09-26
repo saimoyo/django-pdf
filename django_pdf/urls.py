@@ -1,11 +1,7 @@
 from django.urls import path
 
-from django_pdf.views import (
-    DashboardView,
-    HTMLTemplateView,
-    PDFTemplateView,
-    TemplateHTMX,
-)
+from django_pdf.views import (DashboardView, HTMLTemplateView, PDFTemplateView,
+                              TemplateHTMX)
 
 app_name = "django_db"
 urlpatterns = [

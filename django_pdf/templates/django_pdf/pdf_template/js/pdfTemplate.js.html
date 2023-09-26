@@ -1,8 +1,6 @@
-{% include "django_pdf/html_template/js/templateFileContent.js.html" %}
 {% include "django_pdf/js/template.js.html" %}
 
 <script>
-    const initialContent = "{{ initial_content|escapejs }}"
     {% verbatim %}
         const FIND_VARIABLES_REGEX = /{{(.*?)}}/g;
     {% endverbatim %}
@@ -10,13 +8,9 @@
     function pdfTemplateCtx (){
         return {
             ...baseTemplateCtx(),
-            templateFilePath: null,
             variableName: "",
-            get templateFileName(){
-              if (this.templateFilePath) {
-                  return this.templateFilePath.replace(/^.*[\\\/]/, '')
-              }
-            },
+            templateFilePath: "",
+            templateFileName: "",
             get variableNameClass() {
                 if (this.contextSchema.hasOwnProperty(this.variableName)){
                     return "p-1 border border-danger flex-fill me-1"
@@ -25,84 +19,119 @@
             },
             addContextVariable(){
                 const variableName = this.variableName
+                this.variableName = ""
                 if (!this.contextSchema.hasOwnProperty(variableName)) {
                     this.contextSchema[variableName] = {
                         required: false,
-                        font_size_px: 16,
-                        x_pos: 0,
-                        y_pos: 0,
+                        fontFamily: "Arial, Helvetica, sans-serif",
+                        fontSizePx: 16,
+                        xPosition: 0,
+                        yPosition: 0,
+                        xPercentage: 0,
+                        yPercentage: 0,
+                        showExample: false,
                     }
                     this.exampleContext[variableName] = "Hello World"
-                    const container = document.getElementById('annotate-container');
-                    const rectangle = document.createElement('div');
-                    rectangle.classList.add('border', 'bg-success', 'opacity-50', 'px-2');
-                    const family = `contextSchema['${variableName}'].font_family`
-                    const font_size_px = `(contextSchema['${variableName}'].font_size_px + 'px')`
-                    rectangle.setAttribute(
-                        ":style",
-                        `{'font-family': ${family}, 'font-size': ${font_size_px}, 'transform': translate(contextSchema['${variableName}'].x_pos+'px', contextSchema['${variableName}'].y_pos+'px')}`
-                    )
-                    rectangle.setAttribute(
-                        "x-text",
-                        `contextSchema['${variableName}'].show_example?exampleContext['${variableName}']: '${variableName}'`
-                    )
-
-                    // Make the rectangle draggable and resizable
-                    interact(rectangle)
-                        .draggable({
-                            onmove: (event) => {
-                                const target = event.target;
-                                const x = (this.contextSchema[variableName].x_pos || 0) + event.dx;
-                                const y = (this.contextSchema[variableName].y_pos || 0) + event.dy;
-
-                                target.style.transform = `translate(${x}px, ${y}px)`;
-                                this.contextSchema[variableName].x_pos = x
-                                this.contextSchema[variableName].y_pos = y
-                                console.log(this.contextSchema)
-                                console.log(target)
-                            },
-                        })
-
-                    // Append the rectangle to the drawing container
-                    container.appendChild(rectangle);
-                    this.variableName = ""
                 }
             },
-            findVariables(){
-                const currentContent = editor.getValue()
-                let variables = [];
-                let variable
-                while ((variable = FIND_VARIABLES_REGEX.exec(currentContent)) !== null) {
-                  variables.push(variable[1].trim());
-                  this.addContextVariable(variable[1].trim())
+            getAnnotateVariableStyle(variableName){
+                const variableSchema = this.contextSchema[variableName]
+                return {
+                    'font-family': variableSchema.fontFamily,
+                    'font-size': (variableSchema.fontSizePx + 'px'),
+                    'left': `${variableSchema.xPosition}px`,
+                    'top': `${variableSchema.yPosition}px`,
+                    'width': 'fit-content',
                 }
-                for (variable of Object.keys(this.contextSchema)){
-                    if (!variables.includes(variable)){
-                        this.removeContextVariable(variable)
-                    }
-                }
-
             },
-            removeContextVariable (variableName) {
+            getAnnotateVariableExample(variableName){
+                if (this.contextSchema[variableName].showExample){
+                    return exampleContext[variableName]
+                }
+                return variableName
+            },
+            removeContextVariable(variableName) {
                 if (this.contextSchema.hasOwnProperty(variableName)) {
-                    delete this.contextSchema[variableName]
+                    const newContextSchema = {...this.contextSchema}
+                    delete newContextSchema[variableName]
+                    this.contextSchema = newContextSchema
                 }
                 if (this.exampleContext.hasOwnProperty(variableName)) {
-                    delete this.exampleContext[variableName]
+                    const newExampleContext = {...this.exampleContext}
+                    delete newExampleContext[variableName]
+                    this.exampleContext = newExampleContext
                 }
             },
             saveData() {
-                {#this.findVariables()#}
                 const form = document.getElementById('templateForm');
                 if (form.reportValidity()) {
                     this.setInputValue('context_schema', this.contextSchema)
                     this.setInputValue('example_context', this.exampleContext)
                     form.submit()
                 }
+
+            },
+            setOnMove(element, variableName){
+                interact(element)
+                    .draggable({
+                        onmove: (event) => {
+                            const contextData = this.contextSchema[variableName]
+                            const element = document.getElementById(variableName)
+                            const dragAdjustedX = contextData.xPosition + event.dx;
+                            const dragAdjustedY = contextData.yPosition + event.dy;
+                            contextData.xPercentage = (
+                                (dragAdjustedX)
+                                /this.pdfDimensions.pageWidthPx
+                            )
+                            const bottomYPosition = dragAdjustedY+element.clientHeight
+                            const margin = Math.floor((bottomYPosition/this.pdfDimensions.pageHeightPx)) * 20
+                            contextData.yPercentage = (
+                                (bottomYPosition-margin)
+                                /this.pdfDimensions.pageHeightPx
+                            )
+                            contextData.xPosition = dragAdjustedX
+                            contextData.yPosition = dragAdjustedY
+                            console.log(contextData)
+                        },
+                    })
+            },
+            getSetTemplateFileFunc(){
+                const onCompleteFuncCtx = this
+                function setTemplateFile(pdfDoc, pdfUrl){
+                    pdfDoc.getData().then(function(arrayBuffer) {
+                        const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+                        const fileName = onCompleteFuncCtx.getFilenameFromUrl(pdfUrl)
+                        const file = new File(
+                            [blob],
+                            fileName,
+                            { type: 'application/pdf', lastModified: Date.now() }
+                        );
+                        onCompleteFuncCtx.templateFileName = fileName
+                        const templateFileElement = document.getElementById("template_file")
+                        const dataTransfer = new DataTransfer()
+                        dataTransfer.items.add(file)
+                        templateFileElement.files = dataTransfer.files
+                    });
+                }
+                return setTemplateFile
+            },
+            getFilenameFromUrl(url) {
+                // Split the URL into segments
+                const segments = url.split('/');
+
+                // Get the last segment, which should be the filename
+                let filename = segments.pop();
+
+                // If the URL had a trailing slash, pop again to get the filename
+                while (filename === '') {
+                    filename = segments.pop();
+                }
+
+                // If the filename has a query string or hash fragment, split by '?' or '#'
+                return filename.split('?')[0].split('#')[0];
             }
         }
     }
-
     document.addEventListener('alpine:init', () => {
         Alpine.data("pdfTemplate", pdfTemplateCtx)
     });

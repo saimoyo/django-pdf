@@ -2,18 +2,18 @@
     <div class="mb-1 h-100 input-group w-100">
         <span class="input-group-text" id="basic-addon3">Template File</span>
         <label for="template_file" class="border bg-white flex-fill d-flex align-items-center ps-2">
-            <span  x-show="!templateFilePath">Select the base template PDF file</span>
-            <span  x-show="templateFilePath" x-text="templateFileName">x</span>
+            <span  x-show="!templateFileName">Select the base template PDF file</span>
+            <span  x-show="templateFileName" x-text="templateFileName"></span>
         </label>
         <input
             class="d-none"
             type="file"
             name="template_file"
-            x-model="templateFilePath"
             id="template_file"
             title="Select the base template pdf"
             accept="application/pdf"
-            @change="$dispatch('foo');console.log('dispatch')"
+            @change="$dispatch('filechanged'); templateFileName=$el.files[0].name"
+            required
         />
         <div class="invalid-feedback d-block">
             {{ form.template_file.errors }}

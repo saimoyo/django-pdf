@@ -40,7 +40,7 @@
                                 <label>Font family</label>
                                 <select
                                     class="form-control"
-                                    x-model="contextSchema[variable].font_family"
+                                    x-model="contextSchema[variable].fontFamily"
                                     required
                                 >
                                      {% for choice_value, choice_label in font_form.fields.font_family.choices %}
@@ -54,7 +54,7 @@
                                 <input type="number"
                                        step="1"
                                        class="form-control"
-                                       x-model.number="contextSchema[variable].font_size_px"
+                                       x-model.number="contextSchema[variable].fontSizePx"
                                        required>
                             </div>
                             <div class="form-group">
@@ -72,7 +72,14 @@
                             <div class="form-group">
                                 <label>Show example</label>
                                 <input type="checkbox"
-                                       x-model="contextSchema[variable].show_example">
+                                       x-model="contextSchema[variable].showExample">
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button
+                                    type="button"
+                                    class="btn btn-danger"
+                                    @click="removeContextVariable(variable)"
+                                >Delete</button>
                             </div>
                         </div>
                     </div>

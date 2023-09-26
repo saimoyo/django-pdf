@@ -1,78 +1,93 @@
 {% include "django_pdf/html_template/js/templateFileContent.js.html" %}
 {% include "django_pdf/js/template.js.html" %}
+
 <script>
-    const initialContent = "{{ initial_content|escapejs }}"
     {% verbatim %}
         const FIND_VARIABLES_REGEX = /{{(.*?)}}/g;
     {% endverbatim %}
 
-    function htmlTemplateCtx (){
-        let editor = null
-        function setUpEditor(){
-            editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+    function htmlTemplateCtx() {
+        let editorInstance = null;
+
+        // Set up the Monaco Editor
+        function initializeEditor() {
+            editorInstance = monaco.editor.create(document.getElementById('monaco-editor'), {
                 value: templateFileContent,
                 language: 'html',
                 automaticLayout: true
             });
         }
-        require(['vs/editor/editor.main'],  setUpEditor);
+
+        require(['vs/editor/editor.main'], initializeEditor);
+
         return {
             ...baseTemplateCtx(),
-            addContextVariable (variableName){
-                if (!this.contextSchema.hasOwnProperty(variableName)){
+
+            // Add context variable with default values if it doesn't exist
+            addContextVariable(variableName) {
+                if (!this.contextSchema.hasOwnProperty(variableName)) {
                     this.contextSchema[variableName] = {
                         required: false,
-                    }
-                    this.exampleContext[variableName] = "Hello World"
+                    };
+                    this.exampleContext[variableName] = "Hello World";
                 }
             },
-            findVariables(){
-                const currentContent = editor.getValue()
-                let variables = [];
-                let variable
-                while ((variable = FIND_VARIABLES_REGEX.exec(currentContent)) !== null) {
-                  variables.push(variable[1].trim());
-                  this.addContextVariable(variable[1].trim())
-                }
-                for (variable of Object.keys(this.contextSchema)){
-                    if (!variables.includes(variable)){
-                        this.removeContextVariable(variable)
-                    }
+
+            // Extract variables from the editor's content and update the contextSchema
+            findVariables() {
+                const editorContent = editorInstance.getValue();
+                let foundVariables = [];
+                let match;
+
+                while ((match = FIND_VARIABLES_REGEX.exec(editorContent)) !== null) {
+                    const variableName = match[1].trim();
+                    foundVariables.push(variableName);
+                    this.addContextVariable(variableName);
                 }
 
-            },
-            removeContextVariable (variableName) {
-                if (this.contextSchema.hasOwnProperty(variableName)) {
-                    delete this.contextSchema[variableName]
-                }
-                if (this.exampleContext.hasOwnProperty(variableName)) {
-                    delete this.exampleContext[variableName]
+                for (const variable of Object.keys(this.contextSchema)) {
+                    if (!foundVariables.includes(variable)) {
+                        this.removeContextVariable(variable);
+                    }
                 }
             },
-            setTemplateFile(){
+
+            // Remove the context variable and its example
+            removeContextVariable(variableName) {
+                // TODO: Find a way of dealing with the errors that this raises
+                delete this.contextSchema[variableName];
+                delete this.exampleContext[variableName];
+            },
+
+            // Set the content of the editor as the content of the HTML template file
+            setHTMLTemplateFile() {
                 const templateFileElement = document.getElementById('template_file');
-                const fileContent = editor.getValue();
-                const fileBlob = new Blob([fileContent], { type: 'text/plain' });
-                const fileName = this.name.replace(/[^a-zA-Z0-9]/g, "")
-                const file = new File([fileBlob], `${fileName}.html`);
-                const dataTransfer = new DataTransfer()
-                dataTransfer.items.add(file)
-                templateFileElement.files = dataTransfer.files
+                const fileContent = editorInstance.getValue();
+                const blobContent = new Blob([fileContent], { type: 'text/plain' });
+                const sanitizedFileName = this.name.replace(/[^a-zA-Z0-9]/g, "");
+                const fileObject = new File([blobContent], `${sanitizedFileName}.html`);
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(fileObject);
+                templateFileElement.files = dataTransfer.files;
             },
+
+            // Save the current state into the form and submit it
             saveData() {
-                this.findVariables()
+                this.findVariables();
+
                 const form = document.getElementById('templateForm');
                 if (form.reportValidity()) {
-                    this.setInputValue('context_schema', this.contextSchema)
-                    this.setInputValue('example_context', this.exampleContext)
-                    this.setTemplateFile()
-                    form.submit()
+                    this.setInputValue('context_schema', this.contextSchema);
+                    this.setInputValue('example_context', this.exampleContext);
+                    this.setHTMLTemplateFile();
+                    form.submit();
                 }
             }
         }
     }
 
     document.addEventListener('alpine:init', () => {
-        Alpine.data("htmlTemplate", htmlTemplateCtx)
+        Alpine.data("htmlTemplate", htmlTemplateCtx);
     });
 </script>

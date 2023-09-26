@@ -11,6 +11,7 @@ python = "^3.11"
 django = "^4.2.5"
 xhtml2pdf = "^0.2.11"
 form = "^0.0.1"
+autoflake = "^2.2.1"
 
 
 [build-system]
