@@ -2,10 +2,8 @@ from datetime import datetime
 from typing import Any
 
 from django.conf import settings
-from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-)
+from django.contrib.auth.mixins import (LoginRequiredMixin,
+                                        PermissionRequiredMixin)
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
 from django.db.models import QuerySet
@@ -35,8 +33,8 @@ class DashboardView(TemplatesPermissionMixin, TemplateView):
 
 # Base class for handling template views
 class BaseTemplateView(TemplatesPermissionMixin, UpdateView):
-    def generate_pdf(self, template: BaseTemplate) -> str:
-        pdf_buffer = template.generate(template.example_context)
+    def generate_pdf_document(self, template: BaseTemplate) -> str:
+        pdf_buffer = template.generate_pdf_document(template.example_context)
         current_hour = datetime.now().hour
         file_name = f"{template.PDF_TEMPLATE_DIR}/temp/{template.name}_{current_hour}.pdf"
         default_storage.delete(file_name)
@@ -65,7 +63,7 @@ class HTMLTemplateView(BaseTemplateView):
                 html_template.template_file.file.read().decode()
             )
             html_template.template_file.file.seek(0)
-            preview_pdf_url = self.generate_pdf(html_template)
+            preview_pdf_url = self.generate_pdf_document(html_template)
         elif template_file := self.request.FILES.get("template_file"):
             template_file_content = template_file.read().decode()
         else:
@@ -90,7 +88,7 @@ class PDFTemplateView(BaseTemplateView):
         preview_pdf_url = None
         if pdf_template := self.get_object():
             template_file_url = pdf_template.template_file.url
-            preview_pdf_url = self.generate_pdf(pdf_template)
+            preview_pdf_url = self.generate_pdf_document(pdf_template)
 
         return super().get_context_data(**kwargs) | {
             "font_form": FontFamilyForm(),

@@ -22,8 +22,10 @@ class HTMLContextSchemaValue(TypedDict):
 
 class PDFContextSchemaValue(TypedDict):
     required: bool
-    font_family: str
-    font_size_px: int
+    fontFamily: str
+    fontSizePx: int
+    xPercentage: float
+    yPercentage: float
 
 
 HTMLContextSchema = Dict[str, HTMLContextSchemaValue]
@@ -56,7 +58,7 @@ class BaseTemplate(models.Model):
                 f"The context dictionary has the following errors: {errors}"
             )
 
-    def generate(self, context: Dict[str, Any]) -> BytesIO:
+    def generate_pdf_document(self, context: Dict[str, Any]) -> BytesIO:
         raise NotImplemented
 
     class Meta:
@@ -67,9 +69,10 @@ class HTMLTemplate(BaseTemplate):
     template_file = models.FileField(
         upload_to=BaseTemplate.PDF_TEMPLATE_DIR,
         validators=[FileExtensionValidator(allowed_extensions=["html"])],
+        verbose_name="source html file",
     )
 
-    def generate(self, context: Dict[str, Any]) -> BytesIO:
+    def generate_pdf_document(self, context: Dict[str, Any]) -> BytesIO:
         self.validate_context(context)
         html = self.render_html(context=context)
         pdf_buffer = BytesIO()
@@ -102,17 +105,18 @@ class PDFTemplate(BaseTemplate):
     template_file = models.FileField(
         upload_to=BaseTemplate.PDF_TEMPLATE_DIR,
         validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
+        verbose_name="source pdf file",
     )
 
-    def generate(self, context: Dict[str, Any]) -> BytesIO:
+    def generate_pdf_document(self, context: Dict[str, Any]) -> BytesIO:
         self.validate_context(context)
         self.template_file.file.seek(0)
         pdf_reader = PdfReader(self.template_file.file)
         page_width, page_height = self._get_pdf_dimensions(pdf_reader)
-        packets = self._get_packets(context, page_width, page_height)
+        packets = self._get_content_packets(context, page_width, page_height)
         return self._write_pdf(pdf_reader, packets)
 
-    def _generate_canvas(
+    def _create_content_canvas(
         self,
         page_width: PointUnit,
         page_height: PointUnit,
@@ -120,18 +124,20 @@ class PDFTemplate(BaseTemplate):
         value: Any,
     ) -> BytesIO:
         packet = BytesIO()
-        c = canvas.Canvas(packet, pagesize=(page_width, page_height))
+        content_canvas = canvas.Canvas(
+            packet, pagesize=(page_width, page_height)
+        )
         x_point = variable_schema["xPercentage"] * page_width
         y_point = (1 - variable_schema["yPercentage"] % 1) * page_height
         font_family = SUPPORTED_FONTS.get(
             variable_schema["fontFamily"], "Helvetica"
         )
         font_size = pixels_to_points(variable_schema["fontSizePx"])
-        c.setFont(font_family, font_size)
-        c.setFillColorRGB(0, 0, 0)
-        c.drawString(x_point, y_point, value)
-        c.showPage()
-        c.save()
+        content_canvas.setFont(font_family, font_size)
+        content_canvas.setFillColorRGB(0, 0, 0)
+        content_canvas.drawString(x_point, y_point, value)
+        content_canvas.showPage()
+        content_canvas.save()
         return packet
 
     def _write_pdf(self, pdf_reader: PdfReader, packets):
@@ -152,7 +158,7 @@ class PDFTemplate(BaseTemplate):
         first_page = pdf_reader.pages[0]
         return first_page.mediabox.width, first_page.mediabox.height
 
-    def _get_packets(
+    def _get_content_packets(
         self,
         context: Dict[str, Any],
         page_width: PointUnit,
@@ -163,7 +169,7 @@ class PDFTemplate(BaseTemplate):
             if not (variable_schema := self.context_schema[variable]):
                 continue
             page_index = int(variable_schema["yPercentage"])
-            packet = self._generate_canvas(
+            packet = self._create_content_canvas(
                 page_width, page_height, variable_schema, value
             )
             packets.setdefault(page_index, []).append(packet)
@@ -175,6 +181,8 @@ class PDFTemplate(BaseTemplate):
             PdfReader(self.template_file.file)
         except:  # TODO: Make the exception more specific
             raise ValidationError("Invalid PDF")
+        if not check_type(self.context_schema, PDFContextSchema):
+            raise ValidationError("The context_schema is incorrect")
         super().save(*args, **kwargs)
 
     @property
