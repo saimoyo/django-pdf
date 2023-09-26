@@ -26,6 +26,9 @@ class PDFContextSchemaValue(TypedDict):
     fontSizePx: int
     xPercentage: float
     yPercentage: float
+    showExample: bool
+    xPosition: float
+    yPosition: float
 
 
 HTMLContextSchema = Dict[str, HTMLContextSchemaValue]
@@ -86,10 +89,10 @@ class HTMLTemplate(BaseTemplate):
         template = current_engine.from_string(template_str)
         return template.render(Context(context))
 
-    def save(self, *args: Any, **kwargs: Any) -> None:
+    def full_clean(self, *args: Any, **kwargs) -> None:
+        super().full_clean()
         if not check_type(self.context_schema, HTMLContextSchema):
             raise ValidationError("The context_schema is incorrect")
-        super().save(*args, **kwargs)
 
     @property
     def url(self) -> None | str:
@@ -175,7 +178,8 @@ class PDFTemplate(BaseTemplate):
             packets.setdefault(page_index, []).append(packet)
         return packets
 
-    def save(self, *args: Any, **kwargs: Any) -> None:
+    def full_clean(self, *args: Any, **kwargs) -> None:
+        super().full_clean()
         try:
             self.template_file.file.seek(0)
             PdfReader(self.template_file.file)
@@ -183,7 +187,6 @@ class PDFTemplate(BaseTemplate):
             raise ValidationError("Invalid PDF")
         if not check_type(self.context_schema, PDFContextSchema):
             raise ValidationError("The context_schema is incorrect")
-        super().save(*args, **kwargs)
 
     @property
     def url(self) -> None | str:

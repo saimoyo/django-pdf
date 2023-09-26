@@ -5,8 +5,12 @@
 - WIP
 
 ## Screenshots
+### HTML Template Editor
 ![img.png](screenshots/html_template.png)
-![img.png](screenshots/pdf_template.png)
+### PDF Template Editor
+![img.png](screenshots/pdf_template_editor.png)
+### PDF Template Preview
+![img.png](screenshots/pdf_template_preview.png)
 
 ## Features
 - Create documents from existing PDF and HTML templates
