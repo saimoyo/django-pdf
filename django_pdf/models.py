@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import Any, Dict, TypedDict, NewType
+from typing import Any, Dict, NewType, TypedDict
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -13,7 +13,8 @@ from typeguard import check_type
 from xhtml2pdf import pisa
 
 # ReportLab point unit
-PointUnit = NewType('PointUnit', float)
+PointUnit = NewType("PointUnit", float)
+
 
 class HTMLContextSchemaValue(TypedDict):
     required: bool
@@ -36,18 +37,24 @@ SUPPORTED_FONTS = {
 }
 
 
-
-
 class BaseTemplate(models.Model):
-    PDF_TEMPLATE_DIR = getattr(settings, "PDF_TEMPLATE_DIR", "django_pdf_files")
+    PDF_TEMPLATE_DIR = getattr(
+        settings, "PDF_TEMPLATE_DIR", "django_pdf_files"
+    )
     context_schema = models.JSONField()
     example_context = models.JSONField()
     name = models.CharField(unique=True, max_length=255)
 
     def validate_context(self, context: Dict[str, Any]) -> None:
-        errors = [f"{key} is a required field" for key, schema_value in self.context_schema.items() if not context.get(key) and schema_value["required"]]
+        errors = [
+            f"{key} is a required field"
+            for key, schema_value in self.context_schema.items()
+            if not context.get(key) and schema_value["required"]
+        ]
         if errors:
-            raise ValueError(f"The context dictionary has the following errors: {errors}")
+            raise ValueError(
+                f"The context dictionary has the following errors: {errors}"
+            )
 
     def generate(self, context: Dict[str, Any]) -> BytesIO:
         raise NotImplemented
@@ -110,16 +117,16 @@ class PDFTemplate(BaseTemplate):
         page_width: PointUnit,
         page_height: PointUnit,
         variable_schema,
-        value: Any
+        value: Any,
     ) -> BytesIO:
         packet = BytesIO()
         c = canvas.Canvas(packet, pagesize=(page_width, page_height))
         x_point = variable_schema["xPercentage"] * page_width
         y_point = (1 - variable_schema["yPercentage"] % 1) * page_height
         font_family = SUPPORTED_FONTS.get(
-            variable_schema["font_family"], "Helvetica"
+            variable_schema["fontFamily"], "Helvetica"
         )
-        font_size = pixels_to_points(variable_schema["font_size_px"])
+        font_size = pixels_to_points(variable_schema["fontSizePx"])
         c.setFont(font_family, font_size)
         c.setFillColorRGB(0, 0, 0)
         c.drawString(x_point, y_point, value)
@@ -169,7 +176,6 @@ class PDFTemplate(BaseTemplate):
         except:  # TODO: Make the exception more specific
             raise ValidationError("Invalid PDF")
         super().save(*args, **kwargs)
-
 
     @property
     def url(self) -> None | str:

@@ -6,9 +6,9 @@
         return {
             contextSchema,
             exampleContext,
-            pdfFileDetails: {
-                totalWidthPX: 0,
-                totalHeightPX: 0,
+            pdfDimensions: {
+                pageWidthPx: 0,
+                pageHeightPx: 0,
             },
             name: "{{ form.name.value|default:"" }}",
 
@@ -24,43 +24,42 @@
 
             setupPdfViewer(previewElement, pdfUrl, onCompleteFunc = null) {
                 if (!previewElement || !pdfUrl) return;
-
-                // Clear existing content in the preview element
-                previewElement.innerHTML = '';
-                const { pdfFileDetails } = this;
+                const { pdfDimensions } = this;
+                previewElement.innerHTML = '';  // Clear existing content in the preview element
 
                 pdfjsLib.getDocument(pdfUrl).promise.then(pdfDoc => {
-                    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                        pdfDoc.getPage(pageNum).then(page => {
-                            // Create and append canvas for each page
-                            const canvas = document.createElement('canvas');
-                            previewElement.appendChild(canvas);
-
-                            const viewport = page.getViewport({ scale: 1.0 });
-                            const aspectRatio = viewport.width / viewport.height;
-                            const maxWidth = previewElement.parentElement.parentElement.clientWidth;
-                            const maxHeight = Math.round(maxWidth / aspectRatio);
-
-                            // Update total width and height
-                            pdfFileDetails.totalWidthPX = Math.max(maxWidth, pdfFileDetails.totalWidthPX);
-                            pdfFileDetails.totalHeightPX += maxHeight + 10; // including marginBottom
-
-                            canvas.width = maxWidth;
-                            canvas.height = maxHeight;
-                            canvas.style.marginBottom = '10px';
-
-                            const context = canvas.getContext('2d');
-                            const renderContext = {
-                                canvasContext: context,
-                                viewport: page.getViewport({ scale: maxWidth / viewport.width }),
-                            };
-                            page.render(renderContext);
-                        });
+                    const totalPages = pdfDoc.numPages;
+                    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                        this.renderPageToCanvas(pdfDimensions, previewElement, pdfDoc, pageNum);
                     }
 
                     if (onCompleteFunc) {
                         onCompleteFunc(pdfDoc, pdfUrl);
                     }
+                });
+            },
+
+            renderPageToCanvas(pdfDimensions, previewElement, pdfDoc, pageNum) {
+                pdfDoc.getPage(pageNum).then(page => {
+                    const canvas = document.createElement('canvas');
+                    previewElement.appendChild(canvas);
+
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    const aspectRatio = viewport.width / viewport.height;
+                    const maxWidth = previewElement.parentElement.parentElement.clientWidth;
+                    const maxHeight = Math.round(maxWidth / aspectRatio);
+
+                    // Update PDF dimensions
+                    pdfDimensions.pageWidthPx = Math.max(maxWidth, pdfDimensions.pageWidthPx);
+                    pdfDimensions.pageHeightPx = Math.max(maxHeight, pdfDimensions.pageHeightPx);
+
+                    canvas.width = maxWidth;
+                    canvas.height = maxHeight;
+                    canvas.style.marginBottom = '10px';
+
+                    const context = canvas.getContext('2d');
+                    const scaledViewport = page.getViewport({ scale: maxWidth / viewport.width });
+                    page.render({ canvasContext: context, viewport: scaledViewport });
                 });
             },
         };

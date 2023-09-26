@@ -23,13 +23,13 @@
                 if (!this.contextSchema.hasOwnProperty(variableName)) {
                     this.contextSchema[variableName] = {
                         required: false,
-                        font_family: "Arial, Helvetica, sans-serif",
-                        font_size_px: 16,
+                        fontFamily: "Arial, Helvetica, sans-serif",
+                        fontSizePx: 16,
                         xPosition: 0,
                         yPosition: 0,
                         xPercentage: 0,
                         yPercentage: 0,
-                        show_example: false,
+                        showExample: false,
                     }
                     this.exampleContext[variableName] = "Hello World"
                 }
@@ -37,15 +37,15 @@
             getAnnotateVariableStyle(variableName){
                 const variableSchema = this.contextSchema[variableName]
                 return {
-                    'font-family': variableSchema.font_family,
-                    'font-size': (variableSchema.font_size_px + 'px'),
+                    'font-family': variableSchema.fontFamily,
+                    'font-size': (variableSchema.fontSizePx + 'px'),
                     'left': `${variableSchema.xPosition}px`,
                     'top': `${variableSchema.yPosition}px`,
                     'width': 'fit-content',
                 }
             },
             getAnnotateVariableExample(variableName){
-                if (this.contextSchema[variableName].show_example){
+                if (this.contextSchema[variableName].showExample){
                     return exampleContext[variableName]
                 }
                 return variableName
@@ -81,16 +81,17 @@
                             const dragAdjustedY = contextData.yPosition + event.dy;
                             contextData.xPercentage = (
                                 (dragAdjustedX)
-                                /this.pdfFileDetails.totalWidthPX
+                                /this.pdfDimensions.pageWidthPx
                             )
                             const bottomYPosition = dragAdjustedY+element.clientHeight
-                            const margin = Math.floor((bottomYPosition/this.pdfFileDetails.totalHeightPX)) * 20
+                            const margin = Math.floor((bottomYPosition/this.pdfDimensions.pageHeightPx)) * 20
                             contextData.yPercentage = (
                                 (bottomYPosition-margin)
-                                /this.pdfFileDetails.totalHeightPX
+                                /this.pdfDimensions.pageHeightPx
                             )
                             contextData.xPosition = dragAdjustedX
                             contextData.yPosition = dragAdjustedY
+                            console.log(contextData)
                         },
                     })
             },

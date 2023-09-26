@@ -45,7 +45,8 @@ class BaseTemplateView(TemplatesPermissionMixin, UpdateView):
 
     def get_success_url(self):
         return self.object.url
-    def get_object(self, queryset: QuerySet=None):
+
+    def get_object(self, queryset: QuerySet = None):
         try:
             return super().get_object(queryset)
         except (AttributeError, ObjectDoesNotExist):
@@ -60,13 +61,17 @@ class HTMLTemplateView(BaseTemplateView):
     def get_context_data(self, **kwargs: Any) -> dict:
         preview_pdf_url = None
         if html_template := self.get_object():
-            template_file_content = html_template.template_file.file.read().decode()
+            template_file_content = (
+                html_template.template_file.file.read().decode()
+            )
             html_template.template_file.file.seek(0)
             preview_pdf_url = self.generate_pdf(html_template)
         elif template_file := self.request.FILES.get("template_file"):
             template_file_content = template_file.read().decode()
         else:
-            template = get_template("django_pdf/html_template/base_template.html")
+            template = get_template(
+                "django_pdf/html_template/base_template.html"
+            )
             template_file_content = template.template.source
 
         return super().get_context_data(**kwargs) | {
